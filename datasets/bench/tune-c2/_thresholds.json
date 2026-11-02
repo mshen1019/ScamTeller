@@ -1,0 +1,9 @@
+{
+ "claude-haiku.c2": 0.9,
+ "claude-opus.c2": 0.85,
+ "deepseek-flash.c2": 0.85,
+ "deepseek-pro.c2": 0.95,
+ "gpt-luna.c2": 0.95,
+ "gpt-sol.c2": 0.95,
+ "jev": 0.95
+}

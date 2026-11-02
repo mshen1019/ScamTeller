@@ -1,0 +1,16 @@
+{
+  "_note": "PLACEHOLDER values marked null must be filled from the training run that produced the reported numbers",
+  "base": "Qwen/Qwen3-8B",
+  "base_revision": "b968826",
+  "prompt": "scamteller/prompts/rubric_v1.txt",
+  "max_len": 4096,
+  "epochs": 1,
+  "lr": null,
+  "per_device_bs": null,
+  "grad_accum": null,
+  "warmup_ratio": null,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "seed": 13
+}

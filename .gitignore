@@ -1,0 +1,45 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+.DS_Store
+.env
+
+# Intermediate artefact: the candidate batch is the source of the split, and the three split outputs cover every record in it,
+# so the repo only ships the split results (see datasets/{train,eval,test}/).
+datasets/candidates/
+datasets/admitted/
+datasets/rejected/
+datasets/review/
+datasets/decisions.jsonl
+
+# Candidate scenarios are the review queue before committing to the bank, not repo content (once committed, see scenario_banks/seed.vN.jsonl)
+datasets/scenario_banks/*.candidates.jsonl
+datasets/scenario_banks/*.candidates.md
+
+# bench results are artefacts, large and re-runnable; the tables and reports are what to keep
+datasets/bench/*
+# Exceptions: these go in the repo. The closed-source baseline run files are "re-runnable", but re-running costs money,
+# and with them anyone can recompute every table in the report at zero cost. The tuning set must be the same for everyone,
+# otherwise thresholds tuned by different people aren't comparable. Background in datasets/bench/README.md.
+!datasets/bench/README.md
+!datasets/bench/_tune-train-100/
+!datasets/bench/tune-c2/
+!datasets/bench/ds3-eval-c2/
+!datasets/bench/ds3-test-c2/
+
+# Model weights never go in git — not the adapter, not the merged model, not a checkpoint.
+# They live on the training host and are distributed (if at all) outside this repository.
+runs/
+checkpoint-*/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+adapter_model.*
+adapter_config.json
+
+# Intermediate training inputs written by `python -m scamteller.data` (rebuildable from datasets/)
+data/

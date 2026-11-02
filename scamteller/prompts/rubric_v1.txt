@@ -1,0 +1,1 @@
+<<PLACEHOLDER: replace with the exact rubric prompt used for the reported model (scam_prefix_rubric_v1). Must contain {transcript}.>>

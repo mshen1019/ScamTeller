@@ -1,0 +1,11 @@
+{
+  "judge_version": "bench-judge/v1",
+  "prompt_fingerprint": "c74b34d61228",
+  "threshold": 0.5,
+  "split": "datasets/eval/ds3-rubric-v3-detect07",
+  "systems": [
+    "jev"
+  ],
+  "created_at": 1793649107.8361511,
+  "note": "Threshold is fixed and never tuned on eval; prefix caching changes only billing, not request content, so comparability is unaffected"
+}

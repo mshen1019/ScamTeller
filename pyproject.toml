@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scamteller"
+version = "0.1.0"
+description = "ScamTeller: real-time phone-scam early warning, with the synthetic-call data factory and benchmark behind it"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = ["httpx>=0.27"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+train = ["torch>=2.3", "transformers>=4.51", "peft>=0.13", "accelerate>=0.33", "safetensors"]
+demo = ["pillow>=10", "numpy>=1.26", "imageio>=2.34", "imageio-ffmpeg>=0.5"]
+
+[project.scripts]
+callfactory = "callfactory.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["callfactory*", "scamteller*"]
+
+[tool.setuptools.package-data]
+scamteller = ["prompts/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

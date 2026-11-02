@@ -1,0 +1,11 @@
+{
+  "judge_version": "bench-judge/v1",
+  "prompt_fingerprint": "c74b34d61228",
+  "threshold": 0.5,
+  "split": "datasets/bench/_tune-train-100",
+  "systems": [
+    "gpt-sol"
+  ],
+  "created_at": 1793653065.0455391,
+  "note": "Threshold is fixed and never tuned on eval; prefix caching changes only billing, not request content, so comparability is unaffected"
+}
