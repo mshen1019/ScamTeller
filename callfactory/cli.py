@@ -1109,8 +1109,11 @@ def _cmd_bench(args: argparse.Namespace) -> int:
     out = Path(args.out) if args.out else (
         _bench_dir(args.split, None) / f"{args.system}.{args.cond}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
-    (out.parent / "_manifest.json").write_text(
-        json.dumps(manifest([args.system], threshold=args.threshold, split=args.split),
+    mf = out.parent / "_manifest.json"
+    previous = json.loads(mf.read_text(encoding="utf-8")) if mf.exists() else None
+    mf.write_text(
+        json.dumps(manifest([args.system], threshold=args.threshold, split=args.split,
+                            previous=previous),
                    indent=2, ensure_ascii=False), encoding="utf-8")
 
     async def go():

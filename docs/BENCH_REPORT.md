@@ -1,12 +1,21 @@
-# Baseline Report: Seven Hosted Detectors on the Early-Warning Eval and Test Sets
+# Benchmark Report: ScamTeller, Its Base Model, and Seven Hosted Detectors
 
 **Data:** `datasets/eval/ds3-rubric-v3-detect07` (119 calls, 912 labelled prefixes) and
 `datasets/test/ds3-rubric-v3-detect07` (104 calls, 817 prefixes, six families held out)
 **Harness:** `callfactory.bench`, `bench-judge/v1`, prompt fingerprint `c74b34d61228`
 **Run:** condition C2 (reasoning minimised), 2026-11-01/02 · **total spend ≈ $30**
 
-This is the line a fine-tuned model has to beat. It is not a leaderboard: there is no single
-"bench score" anywhere in this document, by design (§2).
+Nine systems: **ScamTeller** (the fine-tuned Qwen3-8B this repository is named after), the
+same base model **without** fine-tuning and on the same prompt, and seven hosted detectors
+including three flagship models. It is not a leaderboard: there is no single "bench score"
+anywhere in this document, by design (§2).
+
+**Read this caveat before the tables.** The seven hosted detectors ran on **both** splits.
+ScamTeller and its base model have run files in this repository for **eval only** — their test
+predictions were produced on a separate GPU host and are not yet committed here, so the test
+numbers quoted in the project README cannot be recomputed from this repository. Every number in
+*this* document is recomputable from `datasets/bench/` with no GPU, no API keys and no spend
+(§11); where a figure is not, it is marked.
 
 ---
 
@@ -73,6 +82,13 @@ thrown away the only thing the eval measures.
 | `deepseek-flash` | `deepseek-flash` | off (`thinking.disabled`) | 0.85 | detection 1.000, hard-neg 0.026 |
 | `deepseek-pro` | `deepseek-v4-pro` | off (`thinking.disabled`) | 0.95 | detection 0.846, hard-neg 0.026 |
 | `jev` | `jev-1.13.0` | n/a (not an LLM) | 0.95 | detection 0.769, hard-neg 0.079 |
+| `scamteller` | Qwen3-8B + LoRA, local | n/a (one forward pass) | 0.50 | **not tuned** — see Table E |
+| `qwen3-8b-base` | `Qwen/Qwen3-8B` @ `b968826` | n/a (one forward pass) | 0.50 | **not tuned** — see Table E |
+
+**Why the two local models are not tuned.** The tuning set `_tune-train-100` is a subset of
+**train**, which is ScamTeller's own training data. Choosing its threshold there would be
+choosing a threshold on data it has memorised, so both local rows are reported at a naive 0.50
+and the comparison is read against Table A, where the hosted systems are also at 0.50.
 
 **Why C2.** The product is a live call: a verdict that arrives after the victim has already
 given out the information is worth nothing, so reasoning is switched off wherever the API
@@ -182,6 +198,40 @@ whose base rate is 16%.
 **`claude-opus` and `gpt-sol` are the only systems with zero false alarms on both negative
 classes, on both splits** — 0/38 and 0/19 on eval, 0/35 and 0/17 on test. `claude-opus`
 additionally detects **every** detectable scam on test (44/44).
+
+### Table E — ScamTeller and its base model (eval, both at an untuned 0.50)
+
+Same split, same 912 prefixes, same scoring code as every row above.
+
+| system | thr | prefix acc | balanced acc | PR-AUC | detection | hard-neg FA | plain FA | latency | pair |
+|---|---|---|---|---|---|---|---|---|---|
+| *(never alarm)* | — | 0.837 | 0.500 | — | 0.000 | 0.000 | 0.000 | — | — |
+| **ScamTeller** (Qwen3-8B + LoRA) | 0.50 | **0.962** | **0.950** | **0.971** | 0.976 | **0.000** | **0.000** | 0.0 | **0.63** |
+| Qwen3-8B, not fine-tuned, same prompt | 0.50 | 0.868 | 0.886 | 0.826 | 0.976 | 0.342 | 0.105 | 0.0 | 0.44 |
+
+**What fine-tuning bought is not recall.** Detection is **0.976 for both** — 40 of 41. The
+difference is entirely on the negative side: hard-negative false alarms **0.342 → 0.000** and
+plain false alarms **0.105 → 0.000**. The base model alarms on a third of the legitimate calls
+built to sound alarming; the fine-tune alarms on none of them, 0 of 38 and 0 of 19. Anyone
+reading only a detection column would conclude fine-tuning did nothing.
+
+Three more things worth separating out:
+
+1. **PR-AUC +0.146** (0.8255 → 0.9713) is threshold-free, so it is not an artefact of both rows
+   sitting at 0.50.
+2. **`pair` 0.63 is the highest figure in this document**, above the 0.59 bar §11 sets as "the
+   result worth writing up", and it is the one column a threshold cannot buy (§11). The base
+   model is at 0.44.
+3. **0.962 prefix accuracy at a naive 0.50** is above every *tuned* hosted detector in Table B
+   (0.883–0.939). Table A shows what the same untuned 0.50 does to those systems: 0.371–0.773,
+   all of them below the do-nothing baseline.
+
+**Not in this table, and why.** Wall-clock latency: these run files carry `latency_ms: null`
+because the forward passes were timed separately by `python -m scamteller.latency`, not during
+scoring. The ~70 ms figure quoted in the README comes from that measurement on the GPU host and
+is **not** recomputable here (§12). The `latency` column above is the signed distance in
+utterances between the alarm and the labelled detection point, as everywhere else in this
+document — both local models land exactly on the label.
 
 ### Table D — the vendor's own operating point (the model's `alarm` boolean, eval)
 
@@ -347,7 +397,7 @@ The usable-threshold band tells the same story. Width of the interval where hard
 alarms stay ≤ 0.10 **and** detection stays > 0, measured on eval:
 
 ```
-qwen-prefix-ift (a fine-tune)   [0.05, 0.95]   width 0.90   detection 1.000 inside
+scamteller (the fine-tune)     [0.05, 0.95]   width 0.90   detection 1.000 inside
 deepseek-flash                  [0.85, 0.95]   width 0.10   detection 0.976
 jev                             [0.95, 0.95]   width 0.00   detection 0.805
 ```
@@ -488,6 +538,19 @@ callfactory bench-table datasets/eval/ds3-rubric-v3-detect07 \
 
 ## 12. Known limitations
 
+* **ScamTeller and its base model have no test run files in this repository.** Table E is eval
+  only. Their test predictions exist on a separate GPU host; until
+  `datasets/bench/ds3-test-c2/scamteller.jsonl` and `qwen3-8b-base.jsonl` are committed, the
+  test figures in the project README are quoted from that host and cannot be recomputed here.
+  Treat Table C as the complete, reproducible test picture and Table E as an eval-only result.
+* **The two local models' wall-clock latency is not reproducible here** either, for the same
+  reason: it was measured by `scamteller.latency` on the GPU host, batch 1, no cache, while the
+  hosted detectors were timed at concurrency 4 (§6). The two are not measured the same way and
+  should not be compared to three significant figures.
+* **ScamTeller's threshold was never tuned.** 0.50 is the naive cut, not a chosen operating
+  point, because the only legitimate tuning set is inside its training data (§3.1). Its numbers
+  are therefore *not* the best this model can do, and are not directly comparable to the tuned
+  hosted rows in Table B — the honest comparison for Table B is Table A.
 * **n is small.** 41 scam calls with a detection point in eval and 44 in test, 38 and 35 hard
   negatives, 19 and 17 plain calls, 7 in the compliance slice. A one-call swing moves detection
   rate by about 2.4 points. Treat differences under ~5 points as noise — including the gap

@@ -4,8 +4,17 @@
   "threshold": 0.5,
   "split": "datasets/eval/ds3-rubric-v3-detect07",
   "systems": [
-    "jev"
+    "claude-haiku",
+    "claude-opus",
+    "deepseek-flash",
+    "deepseek-pro",
+    "gpt-luna",
+    "gpt-sol",
+    "jev",
+    "qwen3-8b-base",
+    "scamteller"
   ],
   "created_at": 1793649107.8361511,
-  "note": "Threshold is fixed and never tuned on eval; prefix caching changes only billing, not request content, so comparability is unaffected"
+  "note": "Threshold is fixed and never tuned on eval; prefix caching changes only billing, not request content, so comparability is unaffected",
+  "systems_note": "Every system whose run file is in this directory. The runner used to write only the systems of its own invocation, so earlier copies of this file named just the last one to run; the list is now the directory's contents."
 }

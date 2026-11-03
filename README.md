@@ -50,8 +50,16 @@ seven hosted detectors including flagship models:
 - **Latency**: ScamTeller and the base model are timed offline, batch 1, no cache; hosted APIs
   were measured at concurrency 4, so their numbers are indicative upper bounds.
 
-The full benchmark, including eval-split results, the tuning curves, latency and cost, and
-where the remaining false positives are, is in [docs/BENCH_REPORT.md](docs/BENCH_REPORT.md).
+- **What is in this repository.** The seven hosted rows above are recomputable from
+  `datasets/bench/` with no GPU, no keys and no spend. **ScamTeller's and the base model's
+  *test* predictions are not committed yet** — they were produced on a separate GPU host, so
+  those two rows are quoted, not reproducible here. Their **eval** run files *are* committed,
+  and on eval the same comparison is stronger: PR-AUC 0.971 vs 0.826, pair accuracy 0.63 vs
+  0.44, and hard-negative false alarms 0.000 vs 0.342. See
+  [docs/BENCH_REPORT.md](docs/BENCH_REPORT.md) Table E and §12.
+
+The full benchmark — eval and test, the tuning curves, latency and cost, and where the
+remaining false positives are — is in [docs/BENCH_REPORT.md](docs/BENCH_REPORT.md).
 
 ## How it works
 
@@ -108,6 +116,10 @@ python -m callfactory bench-table datasets/test/ds3-rubric-v3-detect07 \
 pytest -q
 ```
 
+**Model weights are not released.** No adapter, no merged model and no checkpoint is in
+this repository or in its releases, and `.gitignore` is set up to keep it that way. Reproducing
+ScamTeller means training it; the recipe below is the one that produced the reported numbers.
+
 **Train and score the model** (one or more 24 GB+ GPUs):
 
 ```bash
@@ -145,6 +157,26 @@ see [docs/BENCH_REPORT.md §11](docs/BENCH_REPORT.md).
 The prefix-level fine-tuning recipe was first run by a collaborator on the VERA project; the
 code here is an independent re-implementation of it. Base model:
 [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B) (Apache-2.0).
+
+## Intended use, and what this data is not for
+
+This dataset exists so that **detectors** can be trained and measured. Every call in it is
+synthetic, written to contain the observable warning signs a careful listener could act on, with
+all proper nouns and identifying numbers replaced by placeholders (`[PERSON_1]`, `[COMPANY_A]`,
+`[ACCOUNT_REF]`). It contains no real person, no real organisation, no real account and no
+transcript of a real call.
+
+**Please do not** use it as source material for generating scam scripts, for making calls to
+anyone, or as a persuasion-technique corpus. Nothing in it is a working script: the transcripts
+are deliberately built around *detectable* pretexts and stop short of actionable credential-theft
+or payment steps, and they are released in the hope that detectors get better faster than the
+calls do.
+
+Two limits on what the numbers can support. The labels are **model-annotated and not yet
+validated against human judgement** (see Limitations and `docs/EVAL_SYSTEM.md` §7), so nothing
+here should be used to certify a deployed detector or to make a claim about a real call. And
+because the calls are English-language and phone-channel only, a system that does well here has
+not been shown to do well anywhere else.
 
 ## License
 

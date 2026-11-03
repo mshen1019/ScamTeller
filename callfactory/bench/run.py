@@ -149,15 +149,25 @@ async def run_bench(
     return stats
 
 
-def manifest(systems: Sequence[str], *, threshold: float, split: str) -> dict[str, Any]:
-    """Frozen record: prompt fingerprint + threshold + data source. Written down before looking at results."""
+def manifest(systems: Sequence[str], *, threshold: float, split: str,
+             previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Frozen record: prompt fingerprint + threshold + data source. Written down before looking at results.
+
+    ``previous`` is the manifest already in the output directory, if any. One ``bench`` run
+    benchmarks **one** system, so writing only that system's name would leave a directory of
+    seven run files whose manifest claims one — which is what happened: the committed manifests
+    named whichever system ran last. ``systems`` is therefore the **union** with what the
+    directory already recorded, and ``created_at`` stays at the first write.
+    """
+    prior = list((previous or {}).get("systems") or [])
     return {
         "judge_version": JP.JUDGE_VERSION,
         "prompt_fingerprint": JP.fingerprint(),
         "threshold": threshold,
         "split": str(split),
-        "systems": list(systems),
-        "created_at": time.time(),
+        "systems": sorted(set(prior) | set(systems)),
+        "created_at": (previous or {}).get("created_at", time.time()),
+        "updated_at": time.time(),
         "note": ("Threshold is fixed and never tuned on eval; prefix caching changes only billing, "
                  "not request content, so comparability is unaffected"),
     }

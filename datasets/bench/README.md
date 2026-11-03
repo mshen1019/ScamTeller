@@ -13,13 +13,25 @@ mean the model's own output. `callfactory validate` deliberately does not scan t
 |---|---|---|---|
 | `_tune-train-100/` | 100 calls sampled from **train** | — | the fixed tuning set (a strict subset of train, verified call by call) |
 | `tune-c2/` | `_tune-train-100` | 7 | the runs the thresholds were chosen from, plus `_thresholds.json` |
-| `ds3-eval-c2/` | `datasets/eval/ds3-rubric-v3-detect07` | 7 + ScamTeller | eval results |
-| `ds3-test-c2/` | `datasets/test/ds3-rubric-v3-detect07` | 7 | test results (unseen families) |
+| `ds3-eval-c2/` | `datasets/eval/ds3-rubric-v3-detect07` | 7 + ScamTeller + its base model | eval results |
+| `ds3-test-c2/` | `datasets/test/ds3-rubric-v3-detect07` | 7 | test results (unseen families) — **the two local models are missing here**, see below |
 
 `scamteller.jsonl` holds ScamTeller's own predictions: the fine-tuned Qwen3-8B, one forward
 pass per decision point, scored at its untuned threshold 0.50 (not in `_thresholds.json`, so
-`bench-table --thresholds` falls back to `--threshold 0.5` for it). `python -m scamteller.score`
-writes this format directly.
+`bench-table --thresholds` falls back to `--threshold 0.5` for it). `qwen3-8b-base.jsonl` is the
+**same base model without the adapter, on the same prompt** — the control that says how much of
+ScamTeller is fine-tuning rather than Qwen3-8B. `python -m scamteller.score` writes both.
+
+**Both exist on eval only.** Their test predictions were produced on a separate GPU host and are
+not committed here, so `ds3-test-c2/` has seven systems and the test rows for these two in the
+project README are quoted rather than recomputable. When those two files land in `ds3-test-c2/`,
+every table in the report becomes reproducible end to end; until then `BENCH_REPORT.md` §12 says
+so at the point where it matters.
+
+Neither local run file carries wall-clock latency (`latency_ms` is `null`): the forward passes
+were timed separately by `python -m scamteller.latency`, batch 1 and no cache, which is **not**
+the concurrency-4 regime the hosted detectors were measured in. The two are not comparable to
+three significant figures.
 
 ## Provenance
 
@@ -55,6 +67,8 @@ metadata hashes at run time were `8a4f0658b0dc7edfbafb7626b911a1c03ef83f98966096
 | `deepseek-flash` | `deepseek-flash` | off | 0.85 | detection 1.000, hard-neg 0.026 |
 | `deepseek-pro` | `deepseek-v4-pro` | off | 0.95 | detection 0.846, hard-neg 0.026 |
 | `jev` | `jev-1.13.0` | n/a | 0.95 | detection 0.769, hard-neg 0.079 |
+| `scamteller` | Qwen3-8B + LoRA (local) | n/a | 0.50 | **never tuned** — the tuning set is inside its training data |
+| `qwen3-8b-base` | `Qwen/Qwen3-8B` @ `b968826` | n/a | 0.50 | **never tuned** — reported as the untuned control |
 
 **All seven are tuned on the same train subset and all seven ran both splits.** An earlier
 version of this directory held only three tuned systems and three test runs, excluding
@@ -66,6 +80,12 @@ interpreter — see `BENCH_REPORT.md` §8.
 
 One parse failure exists in the whole set: one prefix of `deepseek-pro` on test (1 of 817),
 scored 0.0.
+
+**`_manifest.json` used to under-report.** One `bench` invocation benchmarks one system and the
+runner wrote the manifest with just that name, so each run clobbered the last and a directory of
+seven run files ended up claiming one. The manifests now list the directory's full contents and
+the runner unions instead of overwriting (`callfactory/bench/run.py::manifest`, pinned by a
+test). `created_at` is the first write; `updated_at` is the most recent.
 
 ## A run file
 

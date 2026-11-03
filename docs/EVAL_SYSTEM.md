@@ -13,7 +13,7 @@ Last updated: 2026-11-02 · rubric `prefix-eval/v3` · scenario bank v3 (57 fami
 author prompt `scenario-author/v2`) · dataset `ds3-rubric-v3-detect07`
 (1000 conversations, train/eval/test; detection rule `detect/v2`) · bench harness
 `bench-judge/v1` with seven hosted baselines on **both** eval and test
-(§5.10, `BENCH_REPORT.md`) · 432 tests, all offline.
+(§5.10, `BENCH_REPORT.md`) · 434 tests, all offline.
 
 ---
 
@@ -1117,13 +1117,14 @@ trusted.
 acceptance gates and a review/commit workflow, sampler, caller and receiver agents
 with 12 + 12 hand-written personas, prefix annotator, programmatic validation,
 batch generation with checkpointing and resumption, re-annotation, human-labelling
-interface (terminal and a browser console), calibration split and agreement,
+interface (terminal; the browser console it was also built with is not part of
+this repository), calibration split and agreement,
 family-balanced sampling, three-way train/eval/test split with whole families held
 out, detection-rule re-derivation at zero cost, cost accounting, and the benchmark
 harness: the streaming detector interface, the replay adapter for stateless judges,
 adapters for Anthropic / OpenAI-compatible / Gemini / Jev, resumable runs with a
 request cap, train-side threshold tuning under a frozen objective, and scoring with
-slices and degenerate baselines. 432 tests, all runnable offline.
+slices and degenerate baselines. 434 tests, all runnable offline.
 
 **Specified but not implemented:** the dataset gatekeeper (component 6). That gap
 now matters more than it did: 32 of the 57 families are machine-written premises
@@ -1138,6 +1139,18 @@ spent for these seven: it was run once, at thresholds fixed beforehand, and the 
 are in the repo so nobody needs to spend it again. A candidate model should still be final
 before it is run on test — the protective rule has not changed, the baselines simply no
 longer need it.
+
+**A detector has now been trained against this data: ScamTeller**, a Qwen3-8B LoRA fine-tune
+on the per-prefix targets, scored through the same harness at an untuned 0.50. On eval it
+reaches prefix accuracy 0.962, PR-AUC 0.971 and detection-point pair accuracy 0.63 with **zero**
+false alarms on either negative class, against 0.868 / 0.826 / 0.44 and hard-negative false
+alarms 0.342 for the same base model on the same prompt (`BENCH_REPORT.md` Table E). Two things
+this says about the data rather than the model: the hard negatives are doing their job, since
+they are what the untuned base model fails on, and the per-prefix targets are learnable, since
+pair accuracy — separating the prefix before the detection point from the prefix at it — rose
+above every hosted detector's. Its threshold is deliberately **not** tuned, because the only
+tuning set is a subset of train and therefore inside its training data. Its **test** run files
+are not in this repository yet.
 
 **The rubric is still not validated against human judgement, but the gap is now measured.**
 A first human round has landed: two of three annotators labelled 25 eval calls independently.
@@ -1190,7 +1203,7 @@ whether the annotator actually holds its nerve on them is unmeasured.
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                                    # 404 tests, no API keys needed
+pytest -q                                    # 434 tests, no API keys needed
 
 python -m callfactory init-bank              # write the hand-written seed bank
 python -m callfactory review-bank            # coverage gaps: what the bank is missing

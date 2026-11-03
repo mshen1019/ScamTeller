@@ -304,6 +304,26 @@ def test_the_manifest_freezes_the_prompt_and_threshold():
     assert m["threshold"] == 0.5 and m["judge_version"]
 
 
+def test_the_manifest_accumulates_systems_instead_of_clobbering_them():
+    """One `bench` run benchmarks one system, so the manifest must union, not overwrite.
+
+    The committed manifests used to name whichever system ran last — a directory of seven run
+    files whose provenance claimed one. `created_at` stays at the first write so the record of
+    when the directory was started is not lost.
+    """
+    from callfactory.bench.run import manifest
+
+    first = manifest(["claude-opus"], threshold=0.5, split="eval/ds3")
+    second = manifest(["jev"], threshold=0.5, split="eval/ds3", previous=first)
+    assert second["systems"] == ["claude-opus", "jev"]
+    assert second["created_at"] == first["created_at"]
+    assert second["updated_at"] >= first["updated_at"]
+
+    # Re-running the same system does not duplicate it.
+    third = manifest(["jev"], threshold=0.5, split="eval/ds3", previous=second)
+    assert third["systems"] == ["claude-opus", "jev"]
+
+
 # --------------------------- Threshold tuning ----------------------------- #
 
 def test_tuning_respects_the_false_alarm_budget():
