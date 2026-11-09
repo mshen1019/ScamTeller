@@ -103,54 +103,12 @@ demo/              the demo video, its renderer, and an offline replay player
 tests/             tests for callfactory (no network, no keys)
 ```
 
-## Reproduce
-
-**Every table, with no GPU and no API keys.** The raw scores of every system are in
-`datasets/bench/`, and scoring is deterministic:
-
-```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev]"
-python -m callfactory bench-table datasets/test/ds3-rubric-v3-detect07 \
-    --runs datasets/bench/ds3-test-c2 --thresholds datasets/bench/tune-c2/_thresholds.json
-pytest -q
-```
-
 **Model weights are not released.** No adapter, no merged model and no checkpoint is in
 this repository or in its releases, and `.gitignore` is set up to keep it that way. Reproducing
 ScamTeller means training it; the recipe below is the one that produced the reported numbers.
 
-**Train and score the model** (one or more 24 GB+ GPUs):
-
-```bash
-pip install -e ".[train]"
-for s in train eval; do
-  python -m scamteller.data datasets/$s/ds3-rubric-v3-detect07 --out data/$s.jsonl
-done
-torchrun --nproc_per_node 8 -m scamteller.train --config configs/qwen3_8b_prefix_ift.json \
-    --train data/train.jsonl --val data/eval.jsonl --out runs/scamteller --merge
-python -m scamteller.score --model runs/scamteller/merged \
-    --split datasets/test/ds3-rubric-v3-detect07 --out runs/test/scamteller.jsonl
-python -m scamteller.latency --model runs/scamteller/merged \
-    --split datasets/test/ds3-rubric-v3-detect07
-```
-
 **Benchmark a hosted detector** (needs that provider's API key in `.env`, see `.env.example`):
 see [docs/BENCH_REPORT.md §11](docs/BENCH_REPORT.md).
-
-## Limitations
-
-- **Synthetic calls, model-annotated labels.** Every call and every label was produced by LLMs
-  and passed programmatic validation; the scenario families were reviewed by people, the
-  per-prefix labels were not. Human labelling is in progress; until then, read the numbers as
-  relative, not absolute.
-- **Late reveals are the main miss.** Five of ScamTeller's six missed test scams show their
-  decisive evidence only in the final utterance.
-- **Six test families is a small sample** of "unseen". The ranking of the closer systems
-  (ScamTeller, DeepSeek Flash, Claude Opus, GPT Sol) could change on a different set.
-- **English only**, and phone channel only.
-- **Latency is offline.** A production deployment would stream with prefix caching, which
-  should be faster than batch-1 full re-encoding, but has not been benchmarked here.
 
 ## Credits
 
